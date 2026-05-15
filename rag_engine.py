@@ -2,7 +2,7 @@ import os
 import tempfile
 import google.generativeai as genai
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
@@ -50,6 +50,7 @@ def get_answer(query, vectorstore):
         docs = vectorstore.similarity_search(query, k=4)
         context = "\n\n---\n\n".join([doc.page_content for doc in docs])
         sources = [doc.page_content for doc in docs]
+
         prompt = f"""You are Study Buddy, a helpful academic assistant.
 Answer ONLY from the document context below.
 
@@ -64,14 +65,18 @@ CONTEXT:
 QUESTION: {query}
 
 ANSWER:"""
+
         response = gemini_model.generate_content(prompt)
         answer = response.text.strip()
+
         if "OUT_OF_SCOPE" in answer:
             return {
                 "answer": "This question is not in your document. Please ask something from your uploaded notes.",
                 "sources": [],
                 "refused": True
             }
+
         return {"answer": answer, "sources": sources, "refused": False}
+
     except Exception as e:
         return {"answer": f"Error: {str(e)}", "sources": [], "refused": True}
